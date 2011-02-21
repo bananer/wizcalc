@@ -1,9 +1,10 @@
 $(document).bind("mobileinit", function() {
+
+    // set up jQuery mobile 
     $.extend(  $.mobile , {
         defaultTransition: 'slideup',
         
     });
-    
 });
 
 $(window).load(function() {
@@ -14,6 +15,8 @@ $(window).load(function() {
     var player_names = {};
     
     var myGame;
+        
+    var prevPage;
     
     var setupPlayerSetup = function() {
 
@@ -30,11 +33,10 @@ $(window).load(function() {
                 		<input type="text" id="player-name-'+i+'" />\
                     </div>\
                 </div>');
-        
+
             $('#player-setup-container').append(playerEntry);
 
             playerEntry.page();
-            
         }
         
             
@@ -81,8 +83,76 @@ $(window).load(function() {
             return false;
         });
         
-   }
+    }
    
+   /**
+    * called from the player setup screen
+    */
+    var startGame = function() {
+
+        myGame = game(num_players);
+        
+        setupStartRound();
+        
+    }
+   
+   
+    /*
+     * Setup for start-round and end-round
+     */
+   
+    
+    /**
+     * Fills a list with entries for the players containing
+     * a score-select control.
+     * Used on the start- and end-round pages.
+     */
+    var fillScoreContainer = function(container, current_round, bets) {
+        container.empty();
+    
+    
+       _.each(player_names, function(p_name, p_i) {
+            
+            if(bets !== undefined && p_i in bets) {
+                d_p_name = p_name + ' ('+bets[p_i]+')';                
+            }
+            else {
+                d_p_name = p_name;
+            }
+            
+            // create field container
+            var player_entry =  $(
+                '<div data-role="fieldcontain">\
+                    <fieldset data-role="controlgroup" data-type="horizontal" data-playerid="'+p_i+'">\
+                    	<legend>'+d_p_name+'</legend>\
+                    </fieldset>\
+                </div>'
+            );
+            
+            // create radio buttons
+            _.each(_.range(current_round+1), function(n) {
+            
+                var uniqid = 'radio-' + container.attr('id') + '-' + p_i;
+
+                player_entry.find('fieldset')
+                    .append('<input type="radio" name="'+uniqid+'" id="'+uniqid+'-'+n+'" value="'+(n)+'" '+ (n==0?'checked="checked"':'')+' />')
+                    .append('<label for="'+uniqid+'-'+n+'">'+(n)+'</label>');
+
+            });
+            
+        
+            // append it
+            $(container).append(
+               player_entry
+            );
+            player_entry.page();
+            
+        });
+   };
+       
+   /**
+     * reads the scores (bets or actual scores) from the list in DOM
+     */
    var readScores = function(container) {
         var ret = {};
         $(container).find('fieldset').each(function(idx, el) {
@@ -93,57 +163,8 @@ $(window).load(function() {
         });
         return ret;
    };
+   
     
-    var fillScoreContainer = function(container, current_round, bets) {
-        container.empty();
-    
-    
-           _.each(player_names, function(p_name, p_i) {
-                /*
-                // slider input type:
-                var player_entry =  $(
-                    '<div data-role="fieldcontain">\
-                        <fieldset data-role="controlgroup" data-type="horizontal">\
-                        	<legend>'+p_name+'</legend>\
-                        	<input type="range" id="slider-'+idx + p_i +'" data-playerid="'+p_i+'" value="0" min="0" max="20" />\
-                        </fieldset>\
-                    </div>'
-                );*/
-                
-                if(bets !== undefined && p_i in bets) {
-                    d_p_name = p_name + ' ('+bets[p_i]+')';                
-                }
-                else {
-                    d_p_name = p_name;
-                }
-                
-                
-                var player_entry =  $(
-                    '<div data-role="fieldcontain">\
-                        <fieldset data-role="controlgroup" data-type="horizontal" data-playerid="'+p_i+'">\
-                        	<legend>'+d_p_name+'</legend>\
-                        </fieldset>\
-                    </div>'
-                );
-                // radio-button input type:
-                _.each(_.range(current_round+1), function(n) {
-                
-                    var uniqid = 'radio-' + container.attr('id') + '-' + p_i;
-
-                    player_entry.find('fieldset')
-                        .append('<input type="radio" name="'+uniqid+'" id="'+uniqid+'-'+n+'" value="'+(n)+'" '+ (n==0?'checked="checked"':'')+' />')
-                        .append('<label for="'+uniqid+'-'+n+'">'+(n)+'</label>');
-
-                });
-                
-            
-                $(container).append(
-                   player_entry
-                );
-                player_entry.page();
-                
-            });
-    };
     
     var setupStartRound = function() {        
         $('#round-start').find('h1').text('Runde '+myGame.current_round+' - Start');
@@ -160,17 +181,9 @@ $(window).load(function() {
         fillScoreContainer(container, myGame.current_round, bets);
     };
         
-    var startGame = function() {
-    
-        myGame = game(num_players);
-        
-        setupStartRound();
-        
-    }
     
       
-        
-        
+    
     $('#round-start-submit').click(function(ev) {
         
         var bets = readScores($('#start-container'));
@@ -220,6 +233,10 @@ $(window).load(function() {
     });
     
    
+    
+    /*
+     * Scoreboard
+     */
    
     var setupScoreBoard = function() {
         var points = myGame.calculatePoints();
@@ -247,7 +264,6 @@ $(window).load(function() {
         listel.page();
     };
     
-    var prevPage;
     
     $('.scoreboard-button').click(function(ev) {
         showScoreBoard(false);
@@ -285,8 +301,7 @@ $(window).load(function() {
         return false;
     });
     
+    
    // first screen is the player setup
    setupPlayerSetup();
-   
-   
 });
